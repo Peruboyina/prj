@@ -1,0 +1,59 @@
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { fetchTopHeadlines } from '../services/newsApi';
+import NewsCard from '../components/NewsCard';
+import { useLanguage } from '../context/LanguageContext';
+
+const CategoryNews = () => {
+    const { category } = useParams();
+    const [articles, setArticles] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const { language, country, countries } = useLanguage();
+
+    useEffect(() => {
+        const getCategoryNews = async () => {
+            setLoading(true);
+            // Ensure category matches API expectations (lowercase)
+            const data = await fetchTopHeadlines(country, category, language);
+            setArticles(data);
+            setLoading(false);
+        };
+
+        getCategoryNews();
+    }, [category, language, country]);
+
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-600"></div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="max-w-[1920px] mx-auto">
+            <div className="mb-8 border-b border-slate-200 dark:border-slate-700 pb-4">
+                <h1 className="text-3xl font-bold text-slate-900 dark:text-white capitalize">
+                    {category} <span className="text-brand-600">News</span>
+                </h1>
+                <p className="text-slate-500 dark:text-slate-400 mt-2 font-medium">
+                    {country === 'global' ? `Latest ${category} updates from around the world` : `Latest ${category} updates in ${countries.find(c => c.code === country)?.name || 'Global'}`}
+                </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {articles.map((article, index) => (
+                    <NewsCard key={`${article.url}-${index}`} article={article} />
+                ))}
+            </div>
+
+            {articles.length === 0 && (
+                <div className="text-center text-slate-600 dark:text-slate-400 mt-12 bg-slate-50 dark:bg-slate-800/50 p-12 rounded-xl">
+                    <p className="text-xl">No articles found for {category}.</p>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default CategoryNews;
